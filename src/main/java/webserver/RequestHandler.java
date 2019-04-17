@@ -1,8 +1,12 @@
 package webserver;
 
+import java.io.BufferedReader;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 
@@ -22,12 +26,29 @@ public class RequestHandler extends Thread {
         log.debug("New Client Connect! Connected IP : {}, Port : {}", connection.getInetAddress(),
                 connection.getPort());
 
-        try (InputStream in = connection.getInputStream(); OutputStream out = connection.getOutputStream()) {
+        try (InputStream in = connection.getInputStream();
+        		OutputStream out = connection.getOutputStream();
+        		BufferedReader br = new BufferedReader(new InputStreamReader(in));) {
             // TODO 사용자 요청에 대한 처리는 이 곳에 구현하면 된다.
+        	
+        	String hLine0 = br.readLine();
+        	String[] base = hLine0.split(" ");
+        	String requestFilePath = base[1];
+        	
+        	
+        	File f = new File("/Users/eros21c/Downloads", requestFilePath);
+        	
+			/*
+			 * String request; while((request = br.readLine()) != null) {
+			 * System.out.println(request); }
+			 */
+        	
             DataOutputStream dos = new DataOutputStream(out);
-            byte[] body = "Hello World".getBytes();
-            response200Header(dos, body.length);
-            responseBody(dos, body);
+            
+            //byte[] body = "Hello World".getBytes();
+            response200Header(dos, (int)f.length());
+            
+            responseFile(dos, f);
         } catch (IOException e) {
             log.error(e.getMessage());
         }
@@ -47,6 +68,19 @@ public class RequestHandler extends Thread {
     private void responseBody(DataOutputStream dos, byte[] body) {
         try {
             dos.write(body, 0, body.length);
+            dos.flush();
+        } catch (IOException e) {
+            log.error(e.getMessage());
+        }
+    }
+    
+    private void responseFile(DataOutputStream dos, File f) {
+        try (InputStream is = new FileInputStream(f)){
+        	int read = -1;
+        	while((read = is.read()) != -1) {
+        		dos.write(read);
+        	}
+            //dos.write(body, 0, body.length);
             dos.flush();
         } catch (IOException e) {
             log.error(e.getMessage());
