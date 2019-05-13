@@ -26,11 +26,28 @@ public class RequestHandler extends Thread {
         		OutputStream out = connection.getOutputStream();
         		DataOutputStream dos = new DataOutputStream(out);){
         	
-        	RequestUtil req = new RequestUtil(is);
-        	ResponseUtil res = new ResponseUtil(dos);
-        	res.response(req.getPath(), req.getParameter());
-        }catch(IOException ioe) {
+        	Request req = new Request(is);
+        	ServiceDelegate service = new ServiceDelegate();
+        	Response res = new Response(dos);
+        	try {
+        		
+        		byte[] responseBody = service.mapper(req.getPath(), req.getParameter());
+        		res.responseHeader("200", responseBody.length);
+        		res.responseBody(responseBody);
+        	}catch(IOException ioe) {
+        		String message = "Page Not Found";
+        		res.responseHeader("404", message.getBytes().length);
+        		res.responseBody(message.getBytes());
+        	}catch(NullPointerException npe) {
+        		String message = "Page Not Found";
+        		res.responseHeader("404", message.getBytes().length);
+        		res.responseBody(message.getBytes());
+        	}
+        	
+        }catch (IOException ioe) {
         	log.error(ioe.getMessage(), ioe);
+        }catch (Exception e) {
+        	log.error(e.getMessage(), e);
         }
     }
 
